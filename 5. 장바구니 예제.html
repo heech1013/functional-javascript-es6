@@ -1,0 +1,99 @@
+<head>
+  <meta chatset="UTF-8">
+  <title>HTML 출력해보기 - 장바구니</title>
+  <script src="./fx.js"></script>
+</head>
+<body>
+  <div id="cart">
+
+  </div>
+  <script>
+    const products = [
+      { name: '반팔티', price: 15000, quantity: 1 },
+      { name: '긴팔티', price: 20000, quantity: 2 },
+      { name: '핸드폰케이스', price: 15000, quantity: 3 },
+      { name: '후드티', price: 30000, quantity: 4 },
+      { name: '바지', price: 25000, quantity: 5 },
+    ]
+
+    // 공통 로직 함수화하기
+    const add = (a, b) => a + b
+
+    // 총 수량
+    // 특정 도메인에만 의존하고 있는 함수이다.
+    const total_quantity = pipe(
+      map(p => p.quantity),
+      reduce(add))
+
+    log(total_quantity(products)) // 15
+
+    // 총 가격
+    // total_quantity 함수와 많은 부분이 비슷하다
+    const total_price = pipe(
+      map(p => p.price * p.quantity),
+      reduce(add))
+
+    log(total_price(products)) // 345000
+    
+    /* refactoring */ 
+    const sum = (f, iter) => go(
+      iter,
+      map(f),
+      reduce(add))
+    
+    log(sum(p => p.price * p.quantity, products)) // 345000
+
+    const total_quantity2 = products =>
+      sum(p => p.quantity, products)
+    
+    const total_price2 = products =>
+      sum(p => p.price * p.quantity, products)
+    
+    /* refactoring */
+    const sum2 = curry((f, iter) => go(
+      iter,
+      map(f),
+      reduce(add)))
+    
+    const total_quantity3 = products =>
+      sum2(p => p.quantity)(products)
+    const total_quantity4 = sum2(p => p.quantity)
+    const total_price4 = sum2(p => p.price * p.quantity)
+
+    // sum은 조금 더 확장성 있는, 추상화 레벨, 다형성이 높은 함수가 되었다.
+    log(sum2(u => u.age, [
+      { age: 30 },
+      { age: 20 },
+      { age: 10 },
+    ])) // 60
+
+    /* HTML로 출력하기 */
+    document.querySelector('#cart').innerHTML = `
+      <table>
+        <tr>
+          ...
+        </tr>
+        ${go(products,
+          map(p => `
+            <tr>
+              ...
+            </tr>
+          `),
+          reduce(add),
+          log
+        )}
+
+        <!-- 또는 -->
+        ${go(products, sum(p => `
+          <tr>
+            ...
+          </tr>
+        `))}
+        <tr>
+          <td>${total_quantity(products)}</td>
+          <td>${total_price(products)}</td>
+        </tr>
+    `
+
+  </script>
+</body>
